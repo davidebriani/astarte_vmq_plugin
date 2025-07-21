@@ -180,11 +180,16 @@ defmodule Astarte.VMQ.Plugin do
   end
 
   def ack_device_deletion(realm_name, encoded_device_id) do
-    timestamp = now_us_x10_timestamp()
-    publish_internal_message(realm_name, encoded_device_id, "/f", "", timestamp)
-    {:ok, decoded_device_id} = Device.decode_device_id(encoded_device_id)
-    {:ok, _} = Queries.ack_device_deletion(realm_name, decoded_device_id)
-    :ok
+    with {:ok, decoded_device_id} <- Device.decode_device_id(encoded_device_id),
+         {:ok, _} <- Queries.ack_device_deletion(realm_name, decoded_device_id) do
+      # Only send /f message AFTER successful database write
+      timestamp = now_us_x10_timestamp()
+      publish_internal_message(realm_name, encoded_device_id, "/f", "", timestamp)
+      :ok
+    else
+      {:error, reason} -> 
+        {:error, reason}
+    end
   end
 
   defp setup_heartbeat_timer(realm, device_id, session_pid) do

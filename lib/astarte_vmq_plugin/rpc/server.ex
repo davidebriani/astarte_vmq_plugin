@@ -70,12 +70,25 @@ defmodule Astarte.VMQ.Plugin.RPC.Server do
   @impl GenServer
   def handle_call({:delete, %{realm_name: realm, device_id: device}}, _from, state) do
     client_id = "#{realm}/#{device}"
-    # Either the client has been deleted or it is :not_found,
-    # which means that there is no session anyway.
-    Plugin.disconnect_client(client_id, true)
-    Plugin.ack_device_deletion(realm, device)
-
-    {:reply, :ok, state}
+    
+    # Step 1: Disconnect client (best effort - ignore errors since client may not be connected)
+    case Plugin.disconnect_client(client_id, true) do
+      :ok -> :ok
+      {:error, :not_found} -> :ok  # Client wasn't connected, that's fine
+      {:error, reason} -> 
+        Logger.warning("Failed to disconnect client #{client_id}: #{inspect(reason)}", 
+                      tag: "vmq_disconnect_failed")
+    end
+    
+    # Step 2: Acknowledge deletion - propagate errors properly
+    case Plugin.ack_device_deletion(realm, device) do
+      :ok -> 
+        {:reply, :ok, state}
+      {:error, reason} -> 
+        Logger.error("Failed to acknowledge device deletion for #{realm}/#{device}: #{inspect(reason)}", 
+                    tag: "vmq_ack_deletion_failed")
+        {:reply, {:error, reason}, state}
+    end
   end
 
   @impl GenServer
