@@ -49,7 +49,7 @@ defmodule Astarte.VMQ.Plugin.Queries do
     }
 
     with {:ok, page = %Xandra.Page{}} <-
-           execute_query(conn, realm, query, params, consistency: :quorum) do
+           execute_query(conn, realm, query, params, consistency: Config.database_read_consistency()) do
       [%{"count" => value}] = Enum.to_list(page)
       {:ok, value > 0}
     end
@@ -83,7 +83,7 @@ defmodule Astarte.VMQ.Plugin.Queries do
     }
 
     with {:ok, page = %Xandra.Page{}} <-
-           execute_query(conn, realm, query, params, consistency: :quorum) do
+           execute_query(conn, realm, query, params, consistency: Config.database_read_consistency()) do
       [%{"count" => value}] = Enum.to_list(page)
       {:ok, value > 0}
     end
@@ -116,7 +116,7 @@ defmodule Astarte.VMQ.Plugin.Queries do
       "device_id" => device_id
     }
 
-    execute_query(conn, realm, query, params, consistency: :quorum)
+    execute_query(conn, realm, query, params, consistency: Config.database_write_consistency())
   end
 
   defp execute_query(conn, realm, query, params, query_opts) do

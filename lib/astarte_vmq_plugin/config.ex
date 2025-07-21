@@ -169,6 +169,22 @@ defmodule Astarte.VMQ.Plugin.Config do
     )
   end
 
+  @doc """
+  Returns the consistency level for database read operations.
+  Defaults to :local_quorum for better availability.
+  """
+  def database_read_consistency do
+    Application.get_env(:astarte_vmq_plugin, :database_read_consistency, :local_quorum)
+  end
+
+  @doc """
+  Returns the consistency level for database write operations.
+  Defaults to :local_quorum for better availability while maintaining consistency.
+  """
+  def database_write_consistency do
+    Application.get_env(:astarte_vmq_plugin, :database_write_consistency, :local_quorum)
+  end
+
   def xandra_authentication_options do
     password_auth_opts = [
       username:
