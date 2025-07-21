@@ -107,6 +107,12 @@ defmodule Astarte.VMQ.Plugin do
 
       :not_found ->
         {:error, :not_found}
+        
+      other ->
+        # Handle unexpected responses from VerneMQ API
+        Logger.warning("Unexpected response from VerneMQ disconnect: #{inspect(other)}", 
+                      tag: "vmq_disconnect_unexpected")
+        {:error, :unexpected_response}
     end
   end
 
